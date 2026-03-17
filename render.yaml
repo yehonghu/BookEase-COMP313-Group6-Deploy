@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: bookease
+    runtime: node
+    buildCommand: chmod +x render-build.sh && ./render-build.sh
+    startCommand: cd backend && node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: bookease_jwt_secret_key_2026_comp313
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: MONGODB_URI
+        sync: false
