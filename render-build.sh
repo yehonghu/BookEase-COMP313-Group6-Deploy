@@ -6,13 +6,13 @@ set -e
 
 echo "=== Installing backend dependencies ==="
 cd backend
-npm install
+npm install --production
 
 echo "=== Installing frontend dependencies ==="
 cd ../frontend
-npm install
+npm install --include=dev
 
 echo "=== Building frontend ==="
-npm run build
+npx vite build
 
 echo "=== Build complete ==="
