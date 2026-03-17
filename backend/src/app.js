@@ -58,20 +58,37 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // Serve frontend static files in production
-const frontendDist = path.join(__dirname, '../../frontend/dist');
+// Try multiple possible paths for the frontend dist directory
+const fs = require('fs');
+const possiblePaths = [
+  path.join(__dirname, '../../frontend/dist'),
+  path.resolve(process.cwd(), '../frontend/dist'),
+  path.resolve(process.cwd(), 'frontend/dist'),
+  path.resolve(__dirname, '../../../frontend/dist'),
+];
+
+let frontendDist = possiblePaths[0]; // default
+for (const p of possiblePaths) {
+  if (fs.existsSync(p)) {
+    frontendDist = p;
+    console.log(`Frontend dist found at: ${p}`);
+    break;
+  }
+}
+console.log(`Using frontend dist path: ${frontendDist}`);
+console.log(`Frontend dist exists: ${fs.existsSync(frontendDist)}`);
+console.log(`__dirname: ${__dirname}`);
+console.log(`process.cwd(): ${process.cwd()}`);
+
 app.use(express.static(frontendDist));
 
 // SPA fallback - serve index.html for all non-API routes
 app.get('*', (req, res) => {
   const indexPath = path.join(frontendDist, 'index.html');
-  const fs = require('fs');
   if (fs.existsSync(indexPath)) {
     res.sendFile(indexPath);
   } else {
-    res.status(404).json({
-      success: false,
-      message: `Route ${req.originalUrl} not found`,
-    });
+    res.status(404).send(`Not Found - frontendDist: ${frontendDist}, indexPath: ${indexPath}, exists: ${fs.existsSync(frontendDist)}, cwd: ${process.cwd()}, dirname: ${__dirname}`);
   }
 });
 
