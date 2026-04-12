@@ -5,7 +5,7 @@
 
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Users, Briefcase, Calendar, MessageSquare, LogOut, ArrowLeft, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Briefcase, Calendar, MessageSquare, LogOut, ArrowLeft, Shield, Settings } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 
 const sidebarLinks = [
@@ -15,6 +15,7 @@ const sidebarLinks = [
   { path: '/admin/bookings', label: 'Bookings', icon: Calendar },
   { path: '/admin/reviews', label: 'Reviews', icon: MessageSquare },
   { path: '/admin/contact', label: 'Contact', icon: MessageSquare },
+  { path: '/admin/account', label: 'Manage Account', icon: Settings },
 ];
 
 const AdminLayout = () => {

@@ -51,16 +51,28 @@ const BookingDetail = () => {
   const handleSubmitRating = async (e) => {
     e.preventDefault();
     try {
-      await createReview({
-        bookingId: id,
-        rating: ratingForm.score,
+      // Try the bookings API rating endpoint first
+      await bookingsAPI.submitRating(id, {
+        score: ratingForm.score,
         comment: ratingForm.comment,
       });
       toast.success('Review submitted!');
       setShowRating(false);
       fetchBooking();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to submit review');
+      // Fallback to reviews API
+      try {
+        await createReview({
+          bookingId: id,
+          rating: ratingForm.score,
+          comment: ratingForm.comment,
+        });
+        toast.success('Review submitted!');
+        setShowRating(false);
+        fetchBooking();
+      } catch (err2) {
+        toast.error(err2.response?.data?.message || error.response?.data?.message || 'Failed to submit review');
+      }
     }
   };
 

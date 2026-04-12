@@ -2,10 +2,11 @@
  * @module controllers/availability
  * @description Availability controller.
  * Handles provider availability management including
- * weekly schedules and specific date overrides.
+ * weekly schedules, specific date overrides, and conflict checking.
  */
 
 const Availability = require('../models/Availability.model');
+const Booking = require('../models/Booking.model');
 
 /**
  * Get provider's availability schedule.
@@ -144,6 +145,35 @@ const blockDate = async (req, res, next) => {
   try {
     const { date } = req.body;
 
+    // Check if already blocked
+    const existing = await Availability.findOne({
+      provider: req.user._id,
+      specificDate: new Date(date),
+      isBlocked: true,
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'This date is already blocked',
+      });
+    }
+
+    // Check if there are active bookings on this date
+    const activeBookings = await Booking.find({
+      provider: req.user._id,
+      scheduledDate: new Date(date),
+      status: { $in: ['pending', 'confirmed', 'in_progress'] },
+    }).populate('service', 'title');
+
+    if (activeBookings.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: `Cannot block this date. You have ${activeBookings.length} active booking(s) scheduled.`,
+        data: { bookings: activeBookings.map(b => ({ id: b._id, title: b.service?.title, time: b.scheduledTime })) },
+      });
+    }
+
     const blocked = await Availability.create({
       provider: req.user._id,
       dayOfWeek: new Date(date).getDay(),
@@ -192,6 +222,41 @@ const unblockDate = async (req, res, next) => {
   }
 };
 
+/**
+ * Get provider's existing bookings for a specific date range (for calendar view).
+ * @route GET /api/availability/bookings
+ * @access Private (Provider)
+ */
+const getMyBookingsForCalendar = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+    const filter = {
+      provider: req.user._id,
+      status: { $in: ['pending', 'confirmed', 'in_progress'] },
+    };
+
+    if (startDate && endDate) {
+      filter.scheduledDate = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate),
+      };
+    }
+
+    const bookings = await Booking.find(filter)
+      .populate('service', 'title serviceType')
+      .populate('customer', 'name')
+      .select('scheduledDate scheduledTime duration price status service customer')
+      .sort({ scheduledDate: 1 });
+
+    res.status(200).json({
+      success: true,
+      data: bookings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getMyAvailability,
   getProviderAvailability,
@@ -199,4 +264,5 @@ module.exports = {
   setBulkAvailability,
   blockDate,
   unblockDate,
+  getMyBookingsForCalendar,
 };

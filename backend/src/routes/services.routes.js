@@ -38,7 +38,7 @@ router.put('/:id', protect, updateService);
 router.delete('/:id', protect, deleteService);
 
 // Customer selects a bid
-router.put('/:id/select-bid/:bidId', protect, authorize('customer'), validate, selectBid);
+router.put('/:id/select-bid/:bidId', protect, authorize('customer'), selectBid);
 
 // Provider bid routes
 router.post('/:id/bids', protect, authorize('provider'), bidRules, validate, submitBid);

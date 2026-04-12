@@ -58,14 +58,20 @@ const ServiceDetail = () => {
   };
 
   const handleAcceptBid = async (bidId) => {
-    console.log('Accept Bid clicked', bidId);
     try {
       const res = await servicesAPI.selectBid(id, bidId);
-      toast.success('Bid selected and booking confirmed!');
+      toast.success('Bid accepted and booking created! Check your bookings page.');
       // Update service state with response data
       setService(res.data.data);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to select bid');
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || 'Failed to select bid';
+      if (status === 409) {
+        // Booking conflict
+        toast.error(`Booking Conflict: ${msg}`, { duration: 5000 });
+      } else {
+        toast.error(msg);
+      }
     }
   };
 

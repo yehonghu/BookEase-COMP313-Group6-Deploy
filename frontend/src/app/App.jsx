@@ -45,6 +45,9 @@ import AdminBookings from '../pages/admin/Bookings';
 import AdminReviews from '../pages/admin/Reviews';
 import ContactInbox from '../pages/admin/ContactInbox';
 
+// Shared Pages
+import ManageAccount from '../pages/shared/ManageAccount';
+
 const App = () => {
   return (
     <BrowserRouter>
@@ -94,6 +97,7 @@ const App = () => {
             <Route path="/customer/bookings" element={<MyBookings />} />
             <Route path="/customer/bookings/:id" element={<BookingDetail />} />
             <Route path="/customer/favorites" element={<Favorites />} />
+            <Route path="/customer/account" element={<ManageAccount />} />
           </Route>
 
           {/* Provider Routes */}
@@ -111,6 +115,7 @@ const App = () => {
             <Route path="/provider/bookings" element={<ProviderBookings />} />
             <Route path="/provider/bookings/:id" element={<ProviderBookings />} />
             <Route path="/provider/availability" element={<ProviderAvailability />} />
+            <Route path="/provider/account" element={<ManageAccount />} />
           </Route>
 
           {/* Admin Routes */}
@@ -129,6 +134,7 @@ const App = () => {
             <Route path="/admin/bookings" element={<AdminBookings />} />
             <Route path="/admin/reviews" element={<AdminReviews />} />
             <Route path="/admin/contact" element={<ContactInbox />} />
+            <Route path="/admin/account" element={<ManageAccount />} />
           </Route>
 
           {/* Catch all */}

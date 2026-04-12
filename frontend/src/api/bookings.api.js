@@ -8,6 +8,8 @@ import API from './axios';
 export const bookingsAPI = {
   create: (data) => API.post('/bookings', data),
   getMyBookings: (params) => API.get('/bookings', { params }),
+  getUpcoming: () => API.get('/bookings', { params: { tab: 'upcoming' } }),
+  getPrevious: () => API.get('/bookings', { params: { tab: 'previous' } }),
   getById: (id) => API.get(`/bookings/${id}`),
   updateStatus: (id, data) => API.put(`/bookings/${id}/status`, data),
   submitRating: (id, data) => API.post(`/bookings/${id}/rating`, data),
@@ -21,6 +23,7 @@ export const availabilityAPI = {
   setBulk: (data) => API.put('/availability/bulk', data),
   blockDate: (data) => API.post('/availability/block', data),
   unblockDate: (id) => API.delete(`/availability/block/${id}`),
+  getMyBookings: (params) => API.get('/availability/bookings', { params }),
 };
 
 export const adminAPI = {

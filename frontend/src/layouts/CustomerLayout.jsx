@@ -5,7 +5,7 @@
 
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Calendar, PlusCircle, Heart, User, LogOut, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Calendar, PlusCircle, Heart, User, LogOut, ArrowLeft, Settings } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 
 const sidebarLinks = [
@@ -13,6 +13,7 @@ const sidebarLinks = [
   { path: '/customer/bookings', label: 'My Bookings', icon: Calendar },
   { path: '/services', label: 'Browse Services', icon: PlusCircle },
   { path: '/customer/favorites', label: 'Favorites', icon: Heart },
+  { path: '/customer/account', label: 'Manage Account', icon: Settings },
 ];
 
 const CustomerLayout = () => {

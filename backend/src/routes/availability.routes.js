@@ -12,6 +12,7 @@ const {
   setBulkAvailability,
   blockDate,
   unblockDate,
+  getMyBookingsForCalendar,
 } = require('../controllers/availability.controller');
 const { protect } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/role.middleware');
@@ -25,5 +26,6 @@ router.put('/', protect, authorize('provider'), setAvailability);
 router.put('/bulk', protect, authorize('provider'), setBulkAvailability);
 router.post('/block', protect, authorize('provider'), blockDate);
 router.delete('/block/:id', protect, authorize('provider'), unblockDate);
+router.get('/bookings', protect, authorize('provider'), getMyBookingsForCalendar);
 
 module.exports = router;

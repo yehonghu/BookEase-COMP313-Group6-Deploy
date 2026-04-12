@@ -5,7 +5,7 @@
 
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Briefcase, Calendar, Clock, Send, User, LogOut, ArrowLeft } from 'lucide-react';
+import { LayoutDashboard, Briefcase, Calendar, Clock, Send, User, LogOut, ArrowLeft, Settings } from 'lucide-react';
 import useAuth from '../hooks/useAuth';
 
 const sidebarLinks = [
@@ -14,6 +14,7 @@ const sidebarLinks = [
   { path: '/provider/bookings', label: 'My Bookings', icon: Calendar },
   { path: '/provider/availability', label: 'Availability', icon: Clock },
   { path: '/provider/offers', label: 'My Offers', icon: Send },
+  { path: '/provider/account', label: 'Manage Account', icon: Settings },
 ];
 
 const ProviderLayout = () => {

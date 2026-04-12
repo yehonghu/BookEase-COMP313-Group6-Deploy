@@ -5,6 +5,95 @@
  */
 
 const Service = require('../models/Service.model');
+const Booking = require('../models/Booking.model');
+const Availability = require('../models/Availability.model');
+
+/**
+ * Parse a time string (e.g. "10:00 AM", "14:00", "2:30 PM") into "HH:MM" 24-hour format.
+ */
+const parseTimeTo24h = (timeStr) => {
+  if (!timeStr) return null;
+  const s = timeStr.trim();
+  // Already 24h format like "14:00"
+  const match24 = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (match24) {
+    const h = parseInt(match24[1], 10);
+    const m = parseInt(match24[2], 10);
+    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+      return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    }
+  }
+  // 12h format like "10:00 AM"
+  const match12 = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (match12) {
+    let h = parseInt(match12[1], 10);
+    const m = parseInt(match12[2], 10);
+    const period = match12[3].toUpperCase();
+    if (period === 'PM' && h !== 12) h += 12;
+    if (period === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+  return null;
+};
+
+/**
+ * Check if a provider is available at a given date and time.
+ * Returns { available: boolean, reason: string }
+ */
+const checkProviderAvailability = async (providerId, date, timeStr) => {
+  const dateObj = new Date(date);
+  const dayOfWeek = dateObj.getUTCDay();
+  const time24 = parseTimeTo24h(timeStr);
+
+  // Check for blocked specific date
+  const blockedDate = await Availability.findOne({
+    provider: providerId,
+    specificDate: {
+      $gte: new Date(dateObj.toISOString().split('T')[0]),
+      $lt: new Date(new Date(dateObj.toISOString().split('T')[0]).getTime() + 86400000),
+    },
+    isBlocked: true,
+  });
+
+  if (blockedDate) {
+    return { available: false, reason: 'Provider has blocked this date' };
+  }
+
+  // Check weekly schedule
+  const daySchedule = await Availability.findOne({
+    provider: providerId,
+    dayOfWeek,
+    specificDate: null,
+  });
+
+  if (daySchedule && !daySchedule.isAvailable) {
+    return { available: false, reason: 'Provider is not available on this day of the week' };
+  }
+
+  // If provider has set availability and we have a parseable time, check time slots
+  if (daySchedule && daySchedule.slots && daySchedule.slots.length > 0 && time24) {
+    const inSlot = daySchedule.slots.some((slot) => {
+      return time24 >= slot.startTime && time24 < slot.endTime;
+    });
+    if (!inSlot) {
+      return { available: false, reason: 'Provider is not available at this time. Check their availability schedule.' };
+    }
+  }
+
+  // Check for existing booking conflicts
+  const conflictingBooking = await Booking.findOne({
+    provider: providerId,
+    scheduledDate: dateObj,
+    scheduledTime: timeStr,
+    status: { $in: ['pending', 'confirmed', 'in_progress'] },
+  });
+
+  if (conflictingBooking) {
+    return { available: false, reason: 'Provider already has a booking at this time' };
+  }
+
+  return { available: true, reason: '' };
+};
 
 /**
  * Get all service requests with filtering and pagination.
@@ -383,6 +472,7 @@ const getProviderActiveRequests = async (req, res, next) => {
 
 /**
  * Select a bid for a service request.
+ * This also creates a Booking automatically.
  * @route PUT /api/services/:id/select-bid/:bidId
  * @access Private (Customer)
  */
@@ -413,6 +503,20 @@ const selectBid = async (req, res, next) => {
       });
     }
 
+    // Check provider availability and booking conflicts
+    const availCheck = await checkProviderAvailability(
+      bid.provider,
+      service.preferredDate,
+      service.preferredTime
+    );
+
+    if (!availCheck.available) {
+      return res.status(409).json({
+        success: false,
+        message: availCheck.reason,
+      });
+    }
+
     // Mark selected bid as accepted, others as rejected
     service.bids.forEach((b) => {
       if (b._id.toString() === bid._id.toString()) {
@@ -427,12 +531,27 @@ const selectBid = async (req, res, next) => {
     service.status = 'in_progress';
 
     await service.save();
+
+    // Create a Booking automatically
+    const booking = await Booking.create({
+      service: service._id,
+      customer: req.user._id,
+      provider: bid.provider,
+      bidId: bid._id,
+      scheduledDate: service.preferredDate,
+      scheduledTime: service.preferredTime,
+      duration: bid.estimatedDuration || 60,
+      price: bid.price,
+      status: 'confirmed',
+    });
+
     await service.populate('bids.provider', 'name email avatar specialties');
 
     res.status(200).json({
       success: true,
-      message: 'Bid selected successfully',
+      message: 'Bid selected and booking created successfully',
       data: service,
+      booking: booking,
     });
   } catch (error) {
     next(error);
@@ -451,4 +570,6 @@ module.exports = {
   getOpenRequests,
   selectBid,
   getProviderActiveRequests,
+  checkProviderAvailability,
+  parseTimeTo24h,
 };
